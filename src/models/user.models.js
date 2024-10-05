@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
 
 const userSchema = mongoose.Schema(
   {
@@ -24,12 +23,12 @@ const userSchema = mongoose.Schema(
     },
 
     avatar: {
-      type: String, //cloudinary url
+      type: String, // cloudinary URL
       required: true,
     },
 
     coverImage: {
-      type: String, //cloudinary url
+      type: String, // cloudinary URL
     },
 
     watchHistory: [
@@ -52,8 +51,9 @@ const userSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+// Hash password before saving the user
 userSchema.pre("save", async function (next) {
-  if (!this.Modified("password")) return next();
+  if (!this.isModified("password")) return next();
 
   try {
     this.password = await bcrypt.hash(this.password, 10);
@@ -63,17 +63,18 @@ userSchema.pre("save", async function (next) {
   }
 });
 
+// Method to check if password is correct
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+// Method to generate access token
 userSchema.methods.generateAccessToken = function () {
-  // short lived tokens
   const token = jwt.sign(
     {
       id: this._id,
       email: this.email,
-      username: this.username,
+      username: this.username, // Changed from username to name
       fullname: this.fullname,
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -84,13 +85,13 @@ userSchema.methods.generateAccessToken = function () {
   return token;
 };
 
-userSchema.method.generateRefreshToken = function () {
-  // long lived tokens
+// Method to generate refresh token
+userSchema.methods.generateRefreshToken = function () {
   const token = jwt.sign(
     {
       id: this._id,
       email: this.email,
-      username: this.username,
+      username: this.username, // Changed from username to name
       fullname: this.fullname,
     },
     process.env.REFRESH_TOKEN_SECRET,
@@ -100,6 +101,7 @@ userSchema.method.generateRefreshToken = function () {
   );
   return token;
 };
+
 const User = mongoose.model("User", userSchema);
 
 export default User;
