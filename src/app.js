@@ -15,6 +15,6 @@ app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.static("public"));
 app.use(cookieParser());
-app.use("api/registeruser", userRouter);
+app.use("api/", userRouter);
 
 export default app;
