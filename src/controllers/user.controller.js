@@ -7,6 +7,20 @@ import {
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
 
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = generateAccessToken();
+    const refreshToken = generateRefreshToken();
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
+  } catch (error) {
+    console.log("Error ", error);
+    throw new ApiError(400, "Couldn't generate access and refresh tokens");
+  }
+};
+
 const registerUser = AsyncHandler(async (req, res) => {
   const { username, email, fullname, password } = req.body;
   if ([].some((field) => field?.trim() == "")) {
