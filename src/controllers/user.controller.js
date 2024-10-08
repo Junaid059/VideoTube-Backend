@@ -6,7 +6,7 @@ import {
   uploadOnCloudinary,
   deleteFromCloudinary,
 } from "../utils/cloudinary.js";
-
+import jwt from "jsonwebtoken";
 const generateAccessAndRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -122,4 +122,62 @@ const loginUser = AsyncHandler(async (req, res) => {
   res.json(ApiResponse(200, { accessToken, refreshToken }, "Login successful"));
 });
 
-export { generateAccessAndRefreshToken, registerUser, loginUser };
+const refreshaccessToken = AsyncHandler(async (req, res) => {
+  const incomingRefreshTokens =
+    req.cookies.refreshTokens || req.body.refreshToken;
+
+  if (!incomingRefreshTokens) {
+    return res
+      .status(401)
+      .json(ApiResponse(401, null, "Refresh token is required"));
+  }
+
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshTokens,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    const user = await User.findById(decodedToken?._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json(ApiResponse(404, null, "Invalid refresh Token"));
+
+      if (incomingRefreshTokens !== user.refreshToken) {
+        return res
+          .status(401)
+          .json(ApiResponse(401, null, "Invalid refresh Token"));
+      }
+
+      const options = {
+        httpOnly: true,
+      };
+      const { accessToken, refreshToken: newRefreshToken } =
+        await generateAccessAndRefreshToken(user._id);
+
+      return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+          new ApiResponse(
+            200,
+            { accessToken, refreshToken: newRefreshToken },
+            "Access token refreshed Successfully"
+          )
+        );
+    }
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while refreshing access tokens "
+    );
+  }
+});
+
+export {
+  generateAccessAndRefreshToken,
+  registerUser,
+  loginUser,
+  refreshaccessTokens,
+};
