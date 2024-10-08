@@ -94,4 +94,32 @@ const registerUser = AsyncHandler(async (req, res) => {
   throw new ApiError(500, "Internal Server Error");
 });
 
-export { registerUser };
+const loginUser = AsyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json(ApiResponse(400, null, "Email and password are required"));
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json(ApiResponse(404, null, "User not found"));
+  }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+
+  if (!isValidPassword) {
+    throw new ApiError(401, "Password is incorrect");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  res.json(ApiResponse(200, { accessToken, refreshToken }, "Login successful"));
+});
+
+export { generateAccessAndRefreshToken, registerUser, loginUser };
