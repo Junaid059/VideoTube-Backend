@@ -131,7 +131,7 @@ const logOutUser = AsyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  ); // Move { new: true } here as the third argument
+  );
 
   const options = {
     httpOnly: true,
@@ -197,6 +197,26 @@ const refreshaccessToken = AsyncHandler(async (req, res) => {
   }
 });
 
+const changeCurrentPassword = AsyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+
+  const isPasswordValid = await User.isValidPassword(oldPassword);
+
+  if (!isPasswordValid) {
+    return res.status(400).json(ApiResponse(400, null, "Invalid old password"));
+  }
+
+  await User.save({ validateBeforeSave: false });
+});
+
+const getCurrentUser = AsyncHandler(async (req, res) => {});
+
+const updateAccountDetails = AsyncHandler(async (req, res) => {});
+
+const updateUserAvatar = AsyncHandler(async (req, res) => {});
+
+const updateUserCoverImage = AsyncHandler(async (req, res) => {});
 export {
   generateAccessAndRefreshToken,
   registerUser,
