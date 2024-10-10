@@ -288,6 +288,82 @@ const updateUserCoverImage = AsyncHandler(async (req, res) => {
   return res.status(200).json(ApiResponse(200, " Image updated successfully"));
 });
 
+const getUserChannelProfile = AsyncHandler (async (req,res)=>{
+  const {username} = req.params;
+
+  if(!username){
+    throw new ApiError(400,"username is required")
+  }
+
+  const channel = await User.aggregate(
+    [
+      {
+        $match: {
+          username: username?.lowerCase()
+        }
+      },
+      
+      {
+        $lookup:{
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers"
+        }
+      },
+      {
+        $lookup:{
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscriberedTo"
+          }
+      },
+      {
+        $addFiels:{
+          subscribersCount:{
+            $size: "$subscribers"
+          },
+          channelsSubscribedToCount:{
+            $size:"$subscriberdTo"
+          },
+          isSubscribed:{
+            $cond:{
+              if:{
+                $in:[req.user._id,"$subscribers.subscriber"]
+              },
+              then:true,
+              else:false
+            }
+          }
+        }
+      },{
+        $project:{
+          fullname:1,
+          username:1,
+          avatar:1,
+          subscribersCount:1,
+          channelsSubscribedToCount:1,
+          isSubscribed:1,
+          coverImage:1,
+          email:1
+        }
+      }
+
+      
+
+    ]
+  )
+
+  if(!channel?.length){
+    throw new ApiError(404," channel not found ")
+  }
+    
+  return res.status(200).json(ApiResponse(200," Channel profile fetched successfully"))
+})
+
+
+const getWatchHistory = AsyncHandler (async (req,res)=>{})
 export {
   generateAccessAndRefreshToken,
   registerUser,
