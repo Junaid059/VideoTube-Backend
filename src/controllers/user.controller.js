@@ -262,11 +262,41 @@ const updateUserAvatar = AsyncHandler(async (req, res) => {
   return res.status(200).json(200, "Avatar updated successfully");
 });
 
-const updateUserCoverImage = AsyncHandler(async (req, res) => {});
+const updateUserCoverImage = AsyncHandler(async (req, res) => {
+  const coverImageLocalPath = req.file?.path;
+
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "file is required");
+  }
+
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  if (coverImage.url) {
+    throw new ApiError("something went wrong while uploading file");
+  }
+
+  await User.findByIdAndUpdate(
+    req.body._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res.status(200).json(ApiResponse(200, " Image updated successfully"));
+});
+
 export {
   generateAccessAndRefreshToken,
   registerUser,
   loginUser,
   refreshaccessToken,
   logOutUser,
+  updateUserAvatar,
+  updateUserCoverImage
+  updateAccountDetails,
+  getCurrentUser,
+  changeCurrentPassword
 };
