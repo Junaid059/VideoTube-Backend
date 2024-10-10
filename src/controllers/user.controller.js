@@ -222,18 +222,45 @@ const updateAccountDetails = AsyncHandler(async (req, res) => {
     return res.status(400).json(ApiResponse("full name and email is required"));
   }
 
-  const user = await User.findByIdAndUpdate(req.body._id{
-    $set:{
-      fullname,
-      email:email
-    }
-  },{new:true}
-).select("-password -refreshToken")
+  const user = await User.findByIdAndUpdate(
+    req.body._id,
+    {
+      $set: {
+        fullname,
+        email: email,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
 
-return res.status(200).json(ApiResponse(user," Account updated"))
+  return res.status(200).json(ApiResponse(user, " Account updated"));
 });
 
-const updateUserAvatar = AsyncHandler(async (req, res) => {});
+const updateUserAvatar = AsyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "file is required");
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar.url) {
+    throw new ApiError(400, "something went wrong while uploading file");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.body._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res.status(200).json(200, "Avatar updated successfully");
+});
 
 const updateUserCoverImage = AsyncHandler(async (req, res) => {});
 export {
