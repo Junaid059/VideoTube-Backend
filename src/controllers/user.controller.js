@@ -210,7 +210,10 @@ const changeCurrentPassword = AsyncHandler(async (req, res) => {
   await User.save({ validateBeforeSave: false });
 });
 
-const getCurrentUser = AsyncHandler(async (req, res) => {});
+const getCurrentUser = AsyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+  return res.status(200).json(ApiResponse(200, user, "User found"));
+});
 
 const updateAccountDetails = AsyncHandler(async (req, res) => {});
 
