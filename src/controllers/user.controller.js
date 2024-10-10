@@ -215,7 +215,23 @@ const getCurrentUser = AsyncHandler(async (req, res) => {
   return res.status(200).json(ApiResponse(200, user, "User found"));
 });
 
-const updateAccountDetails = AsyncHandler(async (req, res) => {});
+const updateAccountDetails = AsyncHandler(async (req, res) => {
+  const { fullname, email } = req.body;
+
+  if (!fullname || !email) {
+    return res.status(400).json(ApiResponse("full name and email is required"));
+  }
+
+  const user = await User.findByIdAndUpdate(req.body._id{
+    $set:{
+      fullname,
+      email:email
+    }
+  },{new:true}
+).select("-password -refreshToken")
+
+return res.status(200).json(ApiResponse(user," Account updated"))
+});
 
 const updateUserAvatar = AsyncHandler(async (req, res) => {});
 
