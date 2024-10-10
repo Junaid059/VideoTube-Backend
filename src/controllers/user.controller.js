@@ -363,7 +363,55 @@ const getUserChannelProfile = AsyncHandler (async (req,res)=>{
 })
 
 
-const getWatchHistory = AsyncHandler (async (req,res)=>{})
+const getWatchHistory = AsyncHandler (async (req,res)=>{
+  const user = await User.aggreagate([
+    {
+      $match:{
+        _id:new mongoose.Types.ObjectId(req.user._id)
+      }
+    },{
+      $lookup:{
+        from:"Videos",
+        localField:"watchHistory",
+        foreignField:"_id",
+        as:"watchHistory",
+        pipeline:[
+          {
+            $lookup:{
+              from:"users",
+              localField:"owner",
+              foreignField:"_id",
+              as:"owner",
+              pipeline:[
+                {
+                  $project:{
+                    username:1,
+                    fullname:1,
+                    avatar:1
+
+                  }
+                }
+              ]
+            }
+          }
+        ],{
+          $addFields:{
+            owner:{
+              $first:"owner"
+            }
+          }
+        }
+
+      }
+    }
+  ])
+
+  if(!user){
+    return res.status(404).json(ApiResponse(404,"User not found"))
+  }
+
+  return res.status(200).json(ApiResponse(200,user[0]?.watchHistory,"watch history fetched successfully"))
+})
 export {
   generateAccessAndRefreshToken,
   registerUser,
@@ -374,5 +422,8 @@ export {
   updateUserCoverImage
   updateAccountDetails,
   getCurrentUser,
-  changeCurrentPassword
+  changeCurrentPassword,
+  getWatchHistory,
+  getUserChannelProfile
+
 };
